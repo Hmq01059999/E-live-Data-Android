@@ -1,5 +1,6 @@
 package org.openconnectivity.e_livedatastage1.ui.dashboard;
 
+import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
 import android.graphics.Typeface;
@@ -96,6 +97,10 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
 
     List<PieEntry> prefyvals = new ArrayList<>();
 
+    int growthPert;
+    int convertPert;
+    int lossRatePert;
+
     private Handler handler = new Handler(){
         @Override
         public void handleMessage(@NonNull Message msg) {
@@ -136,6 +141,10 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
                         convert.add(new PieEntry(100-overview.getInt("conversionRate")));
                         lossRate.add(new PieEntry(overview.getInt("lossRate")));
                         lossRate.add(new PieEntry(100-overview.getInt("lossRate")));
+
+                        growthPert = overview.getInt("growthRate");
+                        convertPert = overview.getInt("conversionRate");
+                        lossRatePert = overview.getInt("lossRate");
 
                         showGrowthChart();
                         showConvertChart();
@@ -215,25 +224,10 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
             }
         }).start();
 
-        //initOverViewLineChart();
-
-        //showPreferChart();
-//        showGrowthChart();
-//        showConvertChart();
-//        showLossChart();
-
-        //initBarChart();
-
-//        final TextView textView = binding.textDashboard;
-//        dashboardViewModel.getText().observe(getViewLifecycleOwner(), new Observer<String>() {
-//            @Override
-//            public void onChanged(@Nullable String s) {
-//                textView.setText(s);
-//            }
-//        });
         return root;
     }
 
+    @SuppressLint("ResourceType")
     private void initOverViewLineChart(){
 
         LineDataSet totalSet = new LineDataSet(totalValue,"用户总数");
@@ -301,8 +295,8 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
             totalSet.enableDashedLine(10f,0f,0f);
 
             //黑色线和点
-            totalSet.setColor(getResources().getColor(R.color.orange1));
-            totalSet.setCircleColor(getResources().getColor(R.color.orange1));
+            totalSet.setColor(getResources().getColor(R.color.orange3));
+            totalSet.setCircleColor(getResources().getColor(R.color.orange3));
 
             //线的粗细以及点的大小
             totalSet.setLineWidth(2f);
@@ -349,8 +343,8 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
             activeSet.enableDashedLine(10f,0f,0f);
 
             //黑色线和点
-            activeSet.setColor(getResources().getColor(R.color.orange2));
-            activeSet.setCircleColor(getResources().getColor(R.color.orange2));
+            activeSet.setColor(getResources().getColor(R.color.orange0));
+            activeSet.setCircleColor(getResources().getColor(R.color.orange0));
 
             //线的粗细以及点的大小
             activeSet.setLineWidth(2f);
@@ -398,8 +392,8 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
             lossSet.enableDashedLine(10f,0f,0f);
 
             //黑色线和点
-            lossSet.setColor(getResources().getColor(R.color.orange));
-            lossSet.setCircleColor(getResources().getColor(R.color.orange));
+            lossSet.setColor(getResources().getColor(R.color.orange2));
+            lossSet.setCircleColor(getResources().getColor(R.color.orange2));
 
             //线的粗细以及点的大小
             lossSet.setLineWidth(2f);
@@ -422,7 +416,7 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
 
             //设置填充区域的颜色
             if(Utils.getSDKInt() >= 18){
-                Drawable drawable = ContextCompat.getDrawable(getContext(), R.color.orange2_shadow);
+                Drawable drawable = ContextCompat.getDrawable(getContext(), R.color.orange3_shadow);
                 lossSet.setFillDrawable(drawable);
             }else{
                 lossSet.setFillColor(Color.BLACK);
@@ -460,25 +454,21 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
     }
 
     private void showPreferChart(){
-        //设置每份所占数量
-//        List<PieEntry> yvals = new ArrayList<>();
-//        yvals.add(new PieEntry(335,"家电"));
-//        yvals.add(new PieEntry(310,"食品"));
-//        yvals.add(new PieEntry(234,"美妆"));
-//        yvals.add(new PieEntry(135,"衣服"));
-//        yvals.add(new PieEntry(1548,"鞋包"));
-//        yvals.add(new PieEntry(135,"书籍"));
 
         //设置每份的颜色
         List<Integer> colors = new ArrayList<>();
-        colors.add(Color.parseColor("#ea9518"));
-        colors.add(Color.parseColor("#eeb173"));
-        colors.add(Color.parseColor("#efb336"));
-        colors.add(Color.parseColor("#e98f36"));
-        colors.add(Color.parseColor("#f3ca7e"));
-        colors.add(Color.parseColor("#ea986c"));
+        colors.add(Color.parseColor("#F39423"));
+        colors.add(Color.parseColor("#F9C78B"));
+        colors.add(Color.parseColor("#F5A544"));
+        colors.add(Color.parseColor("#FBDAB2"));
+        colors.add(Color.parseColor("#F7B463"));
+        colors.add(Color.parseColor("#FDECD8"));
 
         PieChartManager pieChartManager = new PieChartManager(preferenceChart);
+        //显示坐标数据的box
+        MyMarkerView mv = new MyMarkerView(getContext(), R.layout.custom_marker_view);
+        mv.setChartView(preferenceChart);
+        preferenceChart.setMarker(mv);
         pieChartManager.showRingPieChart(prefyvals,colors);
 
     }
@@ -487,41 +477,50 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
 
         //设置每份的颜色
         List<Integer> colors = new ArrayList<>();
-        colors.add(Color.parseColor("#ea9518"));
-        colors.add(Color.parseColor("#f5e1ba"));
+        colors.add(Color.parseColor("#F39423"));
+        colors.add(Color.parseColor("#EFEFEF"));
 
         PieChartManager pieChartManager = new PieChartManager(growthRateChart);
         growthRateChart.setDrawCenterText(true);
-        growthRateChart.setCenterText("增长率");
+        growthRateChart.setCenterText(growthPert+"%");
         growthRateChart.setCenterTextColor(Color.BLACK); //中间问题的颜色
-        growthRateChart.setCenterTextSizePixels(45);  //中间文字的大小px
+        growthRateChart.setCenterTextSizePixels(55);  //中间文字的大小px
         growthRateChart.setCenterTextRadiusPercent(0f);
         growthRateChart.setCenterTextTypeface(Typeface.DEFAULT); //中间文字的样式
         growthRateChart.setCenterTextOffset(0, 0); //中间文字的偏移量
         growthRateChart.getLegend().setEnabled(false);
         growthRateChart.setExtraOffsets(0, 0, 0, 0);
         growthRateChart.setHoleRadius(75f);//设置中间洞的大小
+        //显示坐标数据的box
+//        MyMarkerView mv = new MyMarkerView(getContext(), R.layout.custom_marker_view);
+//        mv.setChartView(growthRateChart);
+//        growthRateChart.setMarker(mv);
         pieChartManager.showRingPieChart(growth,colors);
+
     }
 
     private void showConvertChart(){
 
         //设置每份的颜色
         List<Integer> colors = new ArrayList<>();
-        colors.add(Color.parseColor("#ea9518"));
-        colors.add(Color.parseColor("#f5e1ba"));
+        colors.add(Color.parseColor("#F39423"));
+        colors.add(Color.parseColor("#EFEFEF"));
 
         PieChartManager pieChartManager = new PieChartManager(conversionRateChart);
         conversionRateChart.setDrawCenterText(true);
-        conversionRateChart.setCenterText("转化率");
+        conversionRateChart.setCenterText(convertPert+"%");
         conversionRateChart.setCenterTextColor(Color.BLACK); //中间问题的颜色
-        conversionRateChart.setCenterTextSizePixels(45);  //中间文字的大小px
+        conversionRateChart.setCenterTextSizePixels(55);  //中间文字的大小px
         conversionRateChart.setCenterTextRadiusPercent(0f);
         conversionRateChart.setCenterTextTypeface(Typeface.DEFAULT); //中间文字的样式
         conversionRateChart.setCenterTextOffset(0, 0); //中间文字的偏移量
         conversionRateChart.getLegend().setEnabled(false);
         conversionRateChart.setExtraOffsets(0, 0, 0, 0);
         conversionRateChart.setHoleRadius(75f);//设置中间洞的大小
+        //显示坐标数据的box
+//        MyMarkerView mv = new MyMarkerView(getContext(), R.layout.custom_marker_view);
+//        mv.setChartView(conversionRateChart);
+//        conversionRateChart.setMarker(mv);
         pieChartManager.showRingPieChart(convert,colors);
     }
 
@@ -529,20 +528,24 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
 
         //设置每份的颜色
         List<Integer> colors = new ArrayList<>();
-        colors.add(Color.parseColor("#ea9518"));
-        colors.add(Color.parseColor("#f5e1ba"));
+        colors.add(Color.parseColor("#F39423"));
+        colors.add(Color.parseColor("#EFEFEF"));
 
         PieChartManager pieChartManager = new PieChartManager(lossRateChart);
         lossRateChart.setDrawCenterText(true);
-        lossRateChart.setCenterText("流失率");
+        lossRateChart.setCenterText(lossRatePert+"%");
         lossRateChart.setCenterTextColor(Color.BLACK); //中间问题的颜色
-        lossRateChart.setCenterTextSizePixels(45);  //中间文字的大小px
+        lossRateChart.setCenterTextSizePixels(55);  //中间文字的大小px
         lossRateChart.setCenterTextRadiusPercent(0f);
         lossRateChart.setCenterTextTypeface(Typeface.DEFAULT); //中间文字的样式
         lossRateChart.setCenterTextOffset(0, 0); //中间文字的偏移量
         lossRateChart.getLegend().setEnabled(false);
         lossRateChart.setExtraOffsets(0, 0, 0, 0);
         lossRateChart.setHoleRadius(75f);//设置中间洞的大小
+        //显示坐标数据的box
+//        MyMarkerView mv = new MyMarkerView(getContext(), R.layout.custom_marker_view);
+//        mv.setChartView(lossRateChart);
+//        lossRateChart.setMarker(mv);
         pieChartManager.showRingPieChart(lossRate,colors);
     }
 
@@ -556,20 +559,21 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
         consumeChart.setDragEnabled(false);//是否可以拖拽
         consumeChart.setScaleEnabled(false);//是否可以放大
         consumeChart.setTouchEnabled(true);
+
         setBAxis();//设置坐标轴
         setBData();//设置数据
+        //显示坐标数据的box
+        MyMarkerView mv = new MyMarkerView(getContext(), R.layout.custom_marker_view);
+        mv.setChartView(consumeChart);
+        consumeChart.setMarker(mv);
     }
 
     private void setBData(){
         //C的数据
-//        entryList1.add(new BarEntry(0,320f));
-//        entryList1.add(new BarEntry(1,362f));
-//        entryList1.add(new BarEntry(2,301f));
-//        entryList1.add(new BarEntry(3,334f));
-
         BarDataSet barDataSet1 = new BarDataSet(entryList1,"");
-        barDataSet1.setColor(Color.parseColor("#f8dca9"));
+        barDataSet1.setColor(Color.parseColor("#F7B463"));
         barDataSet1.setValueTextSize(8f);
+        barDataSet1.setDrawValues(true);
         barDataSet1.setValueFormatter(new IValueFormatter() {
             @Override
             public String getFormattedValue(float v, Entry entry, int i, ViewPortHandler viewPortHandler) {
@@ -579,14 +583,10 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
 
         //A的数据
 
-//        entryList2.add(new BarEntry(0,120f));
-//        entryList2.add(new BarEntry(1,132f));
-//        entryList2.add(new BarEntry(2,101f));
-//        entryList2.add(new BarEntry(3,134f));
-
         BarDataSet barDataSet2 = new BarDataSet(entryList2,"");
-        barDataSet2.setColor(Color.parseColor("#ea9518"));
+        barDataSet2.setColor(Color.parseColor("#F39423"));
         barDataSet2.setValueTextSize(8f);
+        barDataSet2.setDrawValues(true);
         barDataSet2.setValueFormatter(new IValueFormatter() {
             @Override
             public String getFormattedValue(float v, Entry entry, int i, ViewPortHandler viewPortHandler) {
@@ -594,16 +594,11 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
             }
         });
 
-        //B的数据
-
-//        entryList3.add(new BarEntry(0,220f));
-//        entryList3.add(new BarEntry(1,232f));
-//        entryList3.add(new BarEntry(2,201f));
-//        entryList3.add(new BarEntry(3,234f));
 
         BarDataSet barDataSet3 = new BarDataSet(entryList3,"");
-        barDataSet3.setColor(Color.parseColor("#efb336"));
+        barDataSet3.setColor(Color.parseColor("#FDECD8"));
         barDataSet3.setValueTextSize(8f);
+        barDataSet3.setDrawValues(true);
         barDataSet3.setValueFormatter(new IValueFormatter() {
             @Override
             public String getFormattedValue(float v, Entry entry, int i, ViewPortHandler viewPortHandler) {

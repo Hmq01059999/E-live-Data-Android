@@ -45,39 +45,89 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="150dp"
-            android:orientation="horizontal"
-            android:background="@drawable/window_shape"
-            android:layout_margin="5dp">
+            android:orientation="vertical"
+            android:background="@drawable/window_shape">
 
-            <com.github.mikephil.charting.charts.PieChart
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:id="@+id/growthRateChart"
-                android:layout_marginVertical="10dp"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="3"
+                android:orientation="horizontal"
                 android:layout_marginHorizontal="5dp"
-                android:layout_gravity="center"/>
+                android:layout_marginTop="5dp">
 
-            <com.github.mikephil.charting.charts.PieChart
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
+                <com.github.mikephil.charting.charts.PieChart
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:id="@+id/growthRateChart"
+                    android:layout_marginHorizontal="5dp"
+                    android:layout_gravity="center"/>
+
+                <com.github.mikephil.charting.charts.PieChart
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:id="@+id/conversionRateChart"
+                    android:layout_marginHorizontal="5dp"
+                    android:layout_gravity="center"/>
+
+                <com.github.mikephil.charting.charts.PieChart
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:id="@+id/lossRateChart"
+                    android:layout_marginHorizontal="5dp"
+                    android:layout_gravity="center"/>
+
+
+
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
                 android:layout_weight="1"
-                android:id="@+id/conversionRateChart"
-                android:layout_marginVertical="10dp"
-                android:layout_marginHorizontal="5dp"
-                android:layout_gravity="center"/>
+                android:orientation="horizontal">
 
-            <com.github.mikephil.charting.charts.PieChart
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:id="@+id/lossRateChart"
-                android:layout_marginVertical="10dp"
-                android:layout_marginHorizontal="5dp"
-                android:layout_gravity="center"/>
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginHorizontal="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:gravity="center"
+                    android:text="增长率"
+                    android:textColor="@color/black"
+                    android:textSize="16dp"/>
 
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginHorizontal="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:gravity="center"
+                    android:text="转化率"
+                    android:textColor="@color/black"
+                    android:textSize="16dp"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginHorizontal="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:gravity="center"
+                    android:text="流失率"
+                    android:textColor="@color/black"
+                    android:textSize="16dp"/>
+
+
+            </LinearLayout>
 
         </LinearLayout>
+
+
 
         <LinearLayout
             android:layout_width="match_parent"

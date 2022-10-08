@@ -10,6 +10,9 @@ import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.PercentFormatter;
 
+import org.openconnectivity.e_livedatastage1.MyMarkerView;
+import org.openconnectivity.e_livedatastage1.R;
+
 import java.util.List;
 
 public class PieChartManager {
@@ -50,6 +53,7 @@ public class PieChartManager {
         pieChart.setExtraOffsets(8, 8, 20, 5);
         //图标的背景色
         pieChart.setBackgroundColor(Color.TRANSPARENT);
+
 
         //获取图例
         Legend legend = pieChart.getLegend();
@@ -100,7 +104,7 @@ public class PieChartManager {
         dataset.setSliceSpace(0.5f);
 
         //设置饼状Item被选中时变化的距离
-        dataset.setSelectionShift(0f);
+        dataset.setSelectionShift(2f);
         //填充数据
         PieData pieData = new PieData(dataset);
 //        格式化显示的数据为%百分比

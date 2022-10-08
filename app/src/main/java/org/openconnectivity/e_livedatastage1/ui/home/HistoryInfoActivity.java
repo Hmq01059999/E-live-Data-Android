@@ -148,11 +148,12 @@ public class HistoryInfoActivity extends AppCompatActivity implements OnChartVal
                         JSONArray topSale = jsonObject.getJSONArray("topSale");
                         topSaleName = new String[topSale.length()];
                         for(int i = 0; i<topSale.length(); i++){
+                            if(i!=(topSale.length()-1)){
+                                topSaleName[i] = topSale.getJSONObject(i).getString("tradeName");
 
-                            topSaleName[i] = topSale.getJSONObject(i).getString("tradeName");
-
-                            TopSale rank = new TopSale(topSaleImage[i],topSaleName[i]);
-                            topSaleList.add(rank);
+                                TopSale rank = new TopSale(topSaleImage[i],topSaleName[i]);
+                                topSaleList.add(rank);
+                            }
                         }
 
                         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_topSale);
@@ -202,18 +203,6 @@ public class HistoryInfoActivity extends AppCompatActivity implements OnChartVal
 
             }
         }).start();
-
-        //initLineChart();
-
-        //initBarChart();
-
-        //initTopSale();
-
-//        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_topSale);
-//        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-//        recyclerView.setLayoutManager(layoutManager);
-//        TopSaleAdapter adapter = new TopSaleAdapter(topSaleList);
-//        recyclerView.setAdapter(adapter);
 
 
     }
@@ -296,7 +285,6 @@ public class HistoryInfoActivity extends AppCompatActivity implements OnChartVal
         }
 
         LineDataSet set1;
-        //set1 = new LineDataSet(values,"照度");
 
         if(chart.getData()!=null && chart.getData().getDataSetCount()>0){
             set1 = (LineDataSet) chart.getData().getDataSetByIndex(0);
@@ -324,6 +312,7 @@ public class HistoryInfoActivity extends AppCompatActivity implements OnChartVal
 
             //点是实心圆
             set1.setDrawCircleHole(true);
+            set1.setDrawValues(false);
 
             //customize legend entry
             set1.setFormLineWidth(1f);
@@ -345,13 +334,6 @@ public class HistoryInfoActivity extends AppCompatActivity implements OnChartVal
                 }
             });
 
-            //设置填充区域的颜色
-//            if(Utils.getSDKInt() >= 18){
-//                Drawable drawable = ContextCompat.getDrawable(this, R.color.orange_shadow);
-//                set1.setFillDrawable(drawable);
-//            }else{
-//                set1.setFillColor(Color.BLACK);
-//            }
 
             ArrayList<ILineDataSet> dataSets = new ArrayList<>();
             dataSets.add(set1);//添加数据集
@@ -372,13 +354,18 @@ public class HistoryInfoActivity extends AppCompatActivity implements OnChartVal
         barChart.setScaleEnabled(false);//是否可以放大
         barChart.setDrawGridBackground(false);//是否绘制网格线
 
+        //显示坐标数据的box
+        MyMarkerView mv = new MyMarkerView(this, R.layout.custom_marker_view);
+        mv.setChartView(barChart);
+        barChart.setMarker(mv);
+
         //设置x轴
         XAxis xAxis = barChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);//设置x轴显示在下方
         xAxis.setDrawGridLines(false);//是否绘制该轴的网格线
         xAxis.setLabelCount(5);//设置x轴上的标签个数
         xAxis.setTextSize(10f);//x轴上的标签大小
-        //final String labelName[] = {"1月","2月","3月","4月","5月"};
+
         // 设置x轴显示的值的格式
         xAxis.setValueFormatter(new IAxisValueFormatter() {
             @Override
@@ -412,15 +399,14 @@ public class HistoryInfoActivity extends AppCompatActivity implements OnChartVal
         for(int i = 0; i<barCount; i++){
             barEntries.add(new BarEntry(i,barData[i]));
         }
-//        barEntries.add(new BarEntry(0,100f));
-//        barEntries.add(new BarEntry(1,140f));
-//        barEntries.add(new BarEntry(2,224f));
-//        barEntries.add(new BarEntry(3,100f));
-//        barEntries.add(new BarEntry(4,139f));
+
         BarDataSet barDataSet = new BarDataSet(barEntries,"");
         barDataSet.setValueTextSize(10f);
         barDataSet.setColor(Color.parseColor("#ea9518"));//柱子的颜色
+        barDataSet.setDrawValues(false);
         barSets.add(barDataSet);
+
+
 
         BarData barData = new BarData(barSets);
         barData.setBarWidth(0.5f);
@@ -428,16 +414,6 @@ public class HistoryInfoActivity extends AppCompatActivity implements OnChartVal
         barChart.getLegend().setEnabled(false);
     }
 
-    private void initTopSale(){
-        TopSale rank1 = new TopSale(R.drawable.rank1,"iPhone 14");
-        topSaleList.add(rank1);
-
-        TopSale rank2 = new TopSale(R.drawable.rank2,"iPhone 14 Pro");
-        topSaleList.add(rank2);
-
-        TopSale rank3 = new TopSale(R.drawable.rank3,"iPhone 14 Pro Max");
-        topSaleList.add(rank3);
-    }
 
     @Override
     public void onValueSelected(Entry e, Highlight h) {

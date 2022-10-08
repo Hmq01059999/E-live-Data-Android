@@ -283,6 +283,7 @@ public class HomeFragment extends Fragment implements OnChartValueSelectedListen
 
             //点是实心圆
             set1.setDrawCircleHole(true);
+            set1.setDrawValues(false);
 
             //customize legend entry
             set1.setFormLineWidth(1f);
@@ -341,11 +342,4 @@ public class HomeFragment extends Fragment implements OnChartValueSelectedListen
         Log.i("Nothing selected", "Nothing selected.");
     }
 
-    private void initHistory(){
-        History history1 = new History("疯狂星期四宠粉大促","2022-10-1","16:30-18:47");
-        historyList.add(history1);
-
-        History history2 = new History("疯狂星期五宠粉大促","2022-10-2","16:00-18:47");
-        historyList.add(history2);
-    }
 }
