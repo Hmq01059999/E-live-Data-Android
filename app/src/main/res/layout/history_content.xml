@@ -66,7 +66,6 @@
                             android:layout_width="match_parent"
                             android:layout_height="0dp"
                             android:layout_weight="3"
-                            android:text="12256"
                             android:textSize="25dp"
                             android:gravity="center_vertical"
                             android:layout_marginLeft="15dp"
@@ -99,7 +98,6 @@
                             android:layout_width="match_parent"
                             android:layout_height="0dp"
                             android:layout_weight="3"
-                            android:text="1138"
                             android:textSize="25dp"
                             android:gravity="center_vertical"
                             android:layout_marginLeft="15dp"
@@ -147,7 +145,6 @@
                                 android:layout_width="0dp"
                                 android:layout_height="match_parent"
                                 android:layout_weight="2"
-                                android:text="3256"
                                 android:textStyle="bold"
                                 android:textSize="20dp"
                                 android:textColor="@color/black"
@@ -173,7 +170,6 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="match_parent"
-                                    android:text="118"
                                     android:textColor="#d81e06"
                                     android:textSize="12dp"
                                     android:gravity="center_vertical"
@@ -220,7 +216,6 @@
                                 android:layout_width="0dp"
                                 android:layout_height="match_parent"
                                 android:layout_weight="2"
-                                android:text="4592"
                                 android:textStyle="bold"
                                 android:textSize="20dp"
                                 android:textColor="@color/black"
@@ -246,7 +241,6 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="match_parent"
-                                    android:text="118"
                                     android:textColor="#d81e06"
                                     android:textSize="12dp"
                                     android:gravity="center_vertical"
@@ -297,7 +291,8 @@
                 android:id="@+id/orderQuantity"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="12" />
+                android:layout_weight="12"
+                android:layout_marginBottom="10dp"/>
 
         </LinearLayout>
 

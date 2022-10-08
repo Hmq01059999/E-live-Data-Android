@@ -1,9 +1,12 @@
 package org.openconnectivity.e_livedatastage1.ui.home;
 
+import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,12 +23,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.formatter.IFillFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.interfaces.dataprovider.LineDataProvider;
@@ -33,6 +38,8 @@ import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.Utils;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.openconnectivity.e_livedatastage1.MyMarkerView;
 import org.openconnectivity.e_livedatastage1.R;
 import org.openconnectivity.e_livedatastage1.databinding.FragmentHomeBinding;
@@ -40,15 +47,89 @@ import org.openconnectivity.e_livedatastage1.databinding.FragmentHomeBinding;
 import java.util.ArrayList;
 import java.util.List;
 
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 public class HomeFragment extends Fragment implements OnChartValueSelectedListener {
 
     private HomeViewModel homeViewModel;
     private FragmentHomeBinding binding;
     private LineChart chart;
+    String responseData;
+    int count = 0;
+
+    TextView show_liveTimes;
+    TextView show_followQuantity;
+    TextView show_views;
+
+    String show_label[];
+    int seriesData[];
+    String Ydata[];
+    public static final int GET_LIVE_INFO = 12;
 
     private List<History> historyList = new ArrayList<>();
 
     private List<TopSale> topSaleList = new ArrayList<>();
+
+    private Handler handler = new Handler(){
+        @SuppressLint("HandlerLeak")
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            //super.handleMessage(msg);
+            switch (msg.what){
+                case GET_LIVE_INFO:
+                    try {
+                        JSONObject jsonObject = new JSONObject(responseData);
+                        JSONObject user = jsonObject.getJSONObject("user");
+                        String liveTimes = user.getString("liveTimes");
+                        String followQuantity = user.getString("followQuantity");
+                        String views = user.getString("views");
+
+                        show_liveTimes.setText(liveTimes);
+                        show_followQuantity.setText(followQuantity);
+                        show_views.setText(views);
+
+                        JSONObject uv = jsonObject.getJSONObject("uv");
+
+                        String labels = uv.getString("xAxisData");
+                        labels = labels.replaceAll("\"","");
+                        labels = labels.replace("[","");
+                        labels = labels.replace("]","");
+                        Log.d("label",""+labels);
+                        show_label = labels.split(",");
+                        count = show_label.length;
+
+                        JSONArray jsonArray = uv.getJSONArray("seriesData");
+                        seriesData = new int[jsonArray.length()];
+
+                        for(int i = 0; i < jsonArray.length();i++){
+                            seriesData[i] = jsonArray.getInt(i);
+                        }
+                        //画出UV曲线
+                        initUVChart();
+
+                        JSONArray historyLive = jsonObject.getJSONArray("historyLive");
+                        for(int i = 0; i < historyLive.length(); i++){
+                            JSONObject object = historyLive.getJSONObject(i);
+                            History history = new History(object.getString("liveContent"),object.getString("liveTime"),object.getString("liveDuration"));
+                            historyList.add(history);
+                        }
+
+                        RecyclerView recyclerView = binding.recyclerHistory;
+                        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
+                        recyclerView.setLayoutManager(layoutManager);
+                        HistoryAdapter adapter = new HistoryAdapter(historyList);
+                        recyclerView.setAdapter(adapter);
+
+
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+            }
+
+        }
+    };
 
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -60,15 +141,43 @@ public class HomeFragment extends Fragment implements OnChartValueSelectedListen
         View root = binding.getRoot();
         historyList.clear();
 
-        //设置历史记录
-        initHistory();
-        RecyclerView recyclerView = binding.recyclerHistory;
-        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
-        recyclerView.setLayoutManager(layoutManager);
-        HistoryAdapter adapter = new HistoryAdapter(historyList);
-        recyclerView.setAdapter(adapter);
+        show_liveTimes = (TextView) binding.liveTimes;
+        show_followQuantity = (TextView) binding.followQuantity;
+        show_views = (TextView) binding.views;
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try{
+                    OkHttpClient client = new OkHttpClient();
+                    Request request = new Request.Builder()
+                            .url("https://elivedate.kdsa.cn/historylive")
+                            .build();
+                    Response response = client.newCall(request).execute();
+                    responseData = response.body().string();
+                    Log.d("response",""+responseData);
+
+                    Message message = new Message();
+                    message.what = GET_LIVE_INFO;
+                    handler.sendMessage(message);
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
+
+            }
+        }).start();
 
 
+//        RecyclerView recyclerView = binding.recyclerHistory;
+//        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
+//        recyclerView.setLayoutManager(layoutManager);
+//        HistoryAdapter adapter = new HistoryAdapter(historyList);
+//        recyclerView.setAdapter(adapter);
+
+        return root;
+    }
+
+    private void initUVChart(){
         //设置曲线图
         {
             chart = binding.UVChart;
@@ -97,10 +206,22 @@ public class HomeFragment extends Fragment implements OnChartValueSelectedListen
         XAxis xAxis;
         {
             xAxis = chart.getXAxis();
-            xAxis.setLabelCount(9);
+            //xAxis.setLabelCount(10);
             xAxis.setDrawGridLines(false);
             xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
             xAxis.enableAxisLineDashedLine(10f,0f,0f);
+
+            //label[] = {"50以下","100-300","300-500","500以上"};
+            xAxis.setValueFormatter(new IAxisValueFormatter() {
+                @Override
+                public String getFormattedValue(float v, AxisBase axisBase) {
+                    try {
+                        return show_label[(int) v];
+                    } catch (Exception e) {
+                        return "";
+                    }
+                }
+            });
         }
         YAxis yAxis;
         {
@@ -114,7 +235,7 @@ public class HomeFragment extends Fragment implements OnChartValueSelectedListen
             yAxis.setAxisMinimum(0f);
         }
 
-        setData(10,250);
+        setData(12);
 
         // draw points over time
         chart.animateX(1500);
@@ -122,30 +243,14 @@ public class HomeFragment extends Fragment implements OnChartValueSelectedListen
         // get the legend (only possible after setting data)
         //Legend l = chart.getLegend();
         chart.getLegend().setEnabled(false);
-
-        // draw legend entries as lines
-        //l.setForm(Legend.LegendForm.LINE);
-
-
-
-
-
-        //final TextView textView = binding.textHome;
-//        homeViewModel.getText().observe(getViewLifecycleOwner(), new Observer<String>() {
-//            @Override
-//            public void onChanged(@Nullable String s) {
-//                //textView.setText(s);
-//            }
-//        });
-        return root;
     }
 
-    private void setData(int count, float range){
+    private void setData(int count){
         ArrayList<Entry> values = new ArrayList<>();
 
         for(int i = 0; i < count; i++){
-            float val = (float) (Math.random()*range);
-            values.add(new Entry(i,val,getResources().getDrawable(R.drawable.tao)));
+            float val = (float) (seriesData[i]);
+            values.add(new Entry(i,val));
 
         }
 

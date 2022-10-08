@@ -30,7 +30,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/userName"
-            android:text="111"
             android:textSize="18dp"
             android:textColor="@color/black"
             android:layout_gravity="center"
@@ -94,7 +93,7 @@
                     android:layout_height="match_parent"
                     android:layout_gravity="left"
                     android:layout_weight="5"
-                    android:text="2489372598"
+                    android:id="@+id/userId"
                     android:textSize="15dp"
                     android:textColor="@color/black"/>
 
@@ -121,7 +120,7 @@
                     android:layout_height="match_parent"
                     android:layout_gravity="left"
                     android:layout_weight="5"
-                    android:text="已认证"
+                    android:id="@+id/autification"
                     android:textSize="15dp"
                     android:textColor="#e98f36"/>
 
@@ -148,7 +147,7 @@
                     android:layout_height="match_parent"
                     android:layout_gravity="left"
                     android:layout_weight="5"
-                    android:text="2022-10-1"
+                    android:id="@+id/createTime"
                     android:textSize="15dp"
                     android:textColor="@color/black"/>
 
@@ -175,7 +174,6 @@
                     android:layout_height="match_parent"
                     android:layout_gravity="left"
                     android:layout_weight="5"
-                    android:text="2489372598"
                     android:textSize="15dp"
                     android:id="@+id/phoneNumber"
                     android:textColor="@color/black"/>

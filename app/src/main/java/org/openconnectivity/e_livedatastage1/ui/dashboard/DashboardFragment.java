@@ -5,6 +5,8 @@ import android.graphics.DashPathEffect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -43,12 +45,18 @@ import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.Utils;
 import com.github.mikephil.charting.utils.ViewPortHandler;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.openconnectivity.e_livedatastage1.MyMarkerView;
 import org.openconnectivity.e_livedatastage1.R;
 import org.openconnectivity.e_livedatastage1.databinding.FragmentDashboardBinding;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class DashboardFragment extends Fragment implements OnChartValueSelectedListener {
 
@@ -64,10 +72,108 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
     private HorizontalBarChart consumeChart;
 
     private PieChart preferenceChart;
+    public static final int GET_OVERVIEW_INFO = 14;
+
+    String responseData;
+    String lineLabels[];
+    String barLabels[];
 
     List<Entry> totalValue = new ArrayList<Entry>();
     List<Entry> activeValue = new ArrayList<Entry>();
     List<Entry> lossValue = new ArrayList<Entry>();
+
+    int totalData[];
+    int activeData[];
+    int lossData[];
+
+    List<PieEntry> growth = new ArrayList<>();
+    List<PieEntry> convert = new ArrayList<>();
+    List<PieEntry> lossRate = new ArrayList<>();
+
+    List<BarEntry> entryList1 = new ArrayList<>();
+    List<BarEntry> entryList2 = new ArrayList<>();
+    List<BarEntry> entryList3 = new ArrayList<>();
+
+    List<PieEntry> prefyvals = new ArrayList<>();
+
+    private Handler handler = new Handler(){
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            //super.handleMessage(msg);
+            switch (msg.what){
+                case GET_OVERVIEW_INFO:
+                    try {
+                        JSONObject jsonObject = new JSONObject(responseData);
+                        JSONObject overview = jsonObject.getJSONObject("overview");
+                        JSONArray overxAxis = overview.getJSONArray("xAxisData");
+                        lineLabels = new String[overxAxis.length()];
+                        for(int i = 0; i<lineLabels.length; i++){
+                            lineLabels[i] = overxAxis.getString(i);
+                        }
+
+                        JSONArray seriesData = overview.getJSONArray("seriesData");
+                        JSONArray total = seriesData.getJSONObject(0).getJSONArray("data");
+                        JSONArray active = seriesData.getJSONObject(1).getJSONArray("data");
+                        JSONArray loss = seriesData.getJSONObject(2).getJSONArray("data");
+                        totalData = new int[total.length()];
+                        activeData = new int[total.length()];
+                        lossData = new int[total.length()];
+                        for(int i = 0; i<total.length(); i++){
+                            totalData[i] = total.getInt(i);
+                            activeData[i] = active.getInt(i);
+                            lossData[i] = loss.getInt(i);
+
+                            totalValue.add(new Entry(i,totalData[i]));
+                            activeValue.add(new Entry(i,activeData[i]));
+                            lossValue.add(new Entry(i,lossData[i]));
+                        }
+                        //画出用户数据总览折线图
+                        initOverViewLineChart();
+
+                        growth.add(new PieEntry(overview.getInt("growthRate")));
+                        growth.add(new PieEntry(100-overview.getInt("growthRate")));
+                        convert.add(new PieEntry(overview.getInt("conversionRate")));
+                        convert.add(new PieEntry(100-overview.getInt("conversionRate")));
+                        lossRate.add(new PieEntry(overview.getInt("lossRate")));
+                        lossRate.add(new PieEntry(100-overview.getInt("lossRate")));
+
+                        showGrowthChart();
+                        showConvertChart();
+                        showLossChart();
+
+                        JSONObject consume = jsonObject.getJSONObject("consume");
+                        JSONArray baryAxis = consume.getJSONArray("yAxisData");
+                        barLabels = new String[baryAxis.length()];
+                        for(int i = 0; i<baryAxis.length(); i++){
+                            barLabels[i] = baryAxis.getString(i);
+                        }
+
+                        JSONArray barSeries = consume.getJSONArray("seriesData");
+                        JSONArray cData = barSeries.getJSONObject(0).getJSONArray("data");
+                        JSONArray aData = barSeries.getJSONObject(1).getJSONArray("data");
+                        JSONArray bData = barSeries.getJSONObject(2).getJSONArray("data");
+
+                        for(int i = 0;i<barLabels.length; i++){
+                            entryList1.add(new BarEntry(i,cData.getInt(i)));
+                            entryList2.add(new BarEntry(i,aData.getInt(i)));
+                            entryList3.add(new BarEntry(i,bData.getInt(i)));
+                        }
+
+                        initBarChart();
+
+                        JSONArray pieSeries = jsonObject.getJSONObject("preference").getJSONArray("seriesData");
+                        for(int i = 0; i<pieSeries.length();i++){
+                            prefyvals.add(new PieEntry(pieSeries.getJSONObject(i).getInt("value"),pieSeries.getJSONObject(i).getString("name")));
+                        }
+
+                        showPreferChart();
+
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+            }
+        }
+    };
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -78,23 +184,45 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
         View root = binding.getRoot();
 
         chart = binding.overViewChart;//找到折线图
-
+        consumeChart = binding.consumeChart;//找到消费区间分析图
         growthRateChart = binding.growthRateChart;//找到增长率环状图
         conversionRateChart = binding.conversionRateChart;//找到转化率环状图
         lossRateChart = binding.lossRateChart;//找到流失率环状图
 
-        consumeChart = binding.consumeChart;//找到消费区间分析图
+
 
         preferenceChart = binding.preferenceChart;//找到用户偏好图
 
-        initOverViewLineChart();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try{
+                    OkHttpClient client = new OkHttpClient();
+                    Request request = new Request.Builder()
+                            .url("https://elivedate.kdsa.cn/userAnalysis")
+                            .build();
+                    Response response = client.newCall(request).execute();
+                    responseData = response.body().string();
+                    Log.d("response",""+responseData);
 
-        showPreferChart();
-        showGrowthChart();
-        showConvertChart();
-        showLossChart();
+                    Message message = new Message();
+                    message.what = GET_OVERVIEW_INFO;
+                    handler.sendMessage(message);
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
 
-        initBarChart();
+            }
+        }).start();
+
+        //initOverViewLineChart();
+
+        //showPreferChart();
+//        showGrowthChart();
+//        showConvertChart();
+//        showLossChart();
+
+        //initBarChart();
 
 //        final TextView textView = binding.textDashboard;
 //        dashboardViewModel.getText().observe(getViewLifecycleOwner(), new Observer<String>() {
@@ -107,15 +235,6 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
     }
 
     private void initOverViewLineChart(){
-
-        for(int i = 0; i < 10; i++){
-            float val1 = (float) (Math.random()*500);
-            float val2 = (float) (Math.random()*350);
-            float val3 = (float) (Math.random()*200);
-            totalValue.add(new Entry(i,val1,getResources().getDrawable(R.drawable.tao)));
-            activeValue.add(new Entry(i,val2,getResources().getDrawable(R.drawable.tao)));
-            lossValue.add(new Entry(i,val3,getResources().getDrawable(R.drawable.tao)));
-        }
 
         LineDataSet totalSet = new LineDataSet(totalValue,"用户总数");
         LineDataSet activeSet = new LineDataSet(activeValue,"活跃用户数");
@@ -144,11 +263,21 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
         XAxis xAxis;
         {
             xAxis = chart.getXAxis();
-            xAxis.setLabelCount(9);
+            //xAxis.setLabelCount(9);
             xAxis.setDrawGridLines(false);
             xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
             xAxis.enableAxisLineDashedLine(10f,0f,0f);
             //xAxis.setCenterAxisLabels(true);
+            xAxis.setValueFormatter(new IAxisValueFormatter() {
+                @Override
+                public String getFormattedValue(float v, AxisBase axisBase) {
+                    try {
+                        return lineLabels[(int) v];
+                    } catch (Exception e) {
+                        return "";
+                    }
+                }
+            });
 
         }
         YAxis yAxis;
@@ -332,13 +461,13 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
 
     private void showPreferChart(){
         //设置每份所占数量
-        List<PieEntry> yvals = new ArrayList<>();
-        yvals.add(new PieEntry(335,"家电"));
-        yvals.add(new PieEntry(310,"食品"));
-        yvals.add(new PieEntry(234,"美妆"));
-        yvals.add(new PieEntry(135,"衣服"));
-        yvals.add(new PieEntry(1548,"鞋包"));
-        yvals.add(new PieEntry(135,"书籍"));
+//        List<PieEntry> yvals = new ArrayList<>();
+//        yvals.add(new PieEntry(335,"家电"));
+//        yvals.add(new PieEntry(310,"食品"));
+//        yvals.add(new PieEntry(234,"美妆"));
+//        yvals.add(new PieEntry(135,"衣服"));
+//        yvals.add(new PieEntry(1548,"鞋包"));
+//        yvals.add(new PieEntry(135,"书籍"));
 
         //设置每份的颜色
         List<Integer> colors = new ArrayList<>();
@@ -350,15 +479,11 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
         colors.add(Color.parseColor("#ea986c"));
 
         PieChartManager pieChartManager = new PieChartManager(preferenceChart);
-        pieChartManager.showRingPieChart(yvals,colors);
+        pieChartManager.showRingPieChart(prefyvals,colors);
 
     }
 
     private void showGrowthChart(){
-        //设置每份所占数量
-        List<PieEntry> yvals = new ArrayList<>();
-        yvals.add(new PieEntry(74));
-        yvals.add(new PieEntry(26));
 
         //设置每份的颜色
         List<Integer> colors = new ArrayList<>();
@@ -376,14 +501,10 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
         growthRateChart.getLegend().setEnabled(false);
         growthRateChart.setExtraOffsets(0, 0, 0, 0);
         growthRateChart.setHoleRadius(75f);//设置中间洞的大小
-        pieChartManager.showRingPieChart(yvals,colors);
+        pieChartManager.showRingPieChart(growth,colors);
     }
 
     private void showConvertChart(){
-        //设置每份所占数量
-        List<PieEntry> yvals = new ArrayList<>();
-        yvals.add(new PieEntry(30));
-        yvals.add(new PieEntry(70));
 
         //设置每份的颜色
         List<Integer> colors = new ArrayList<>();
@@ -401,14 +522,10 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
         conversionRateChart.getLegend().setEnabled(false);
         conversionRateChart.setExtraOffsets(0, 0, 0, 0);
         conversionRateChart.setHoleRadius(75f);//设置中间洞的大小
-        pieChartManager.showRingPieChart(yvals,colors);
+        pieChartManager.showRingPieChart(convert,colors);
     }
 
     private void showLossChart(){
-        //设置每份所占数量
-        List<PieEntry> yvals = new ArrayList<>();
-        yvals.add(new PieEntry(46));
-        yvals.add(new PieEntry(54));
 
         //设置每份的颜色
         List<Integer> colors = new ArrayList<>();
@@ -426,26 +543,29 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
         lossRateChart.getLegend().setEnabled(false);
         lossRateChart.setExtraOffsets(0, 0, 0, 0);
         lossRateChart.setHoleRadius(75f);//设置中间洞的大小
-        pieChartManager.showRingPieChart(yvals,colors);
+        pieChartManager.showRingPieChart(lossRate,colors);
     }
 
     private void initBarChart(){
+
+        consumeChart.invalidate();
+        consumeChart.refreshDrawableState();
         consumeChart.getDescription().setEnabled(false);//不显示描述
         consumeChart.getLegend().setEnabled(false);//不显示图例
         consumeChart.setExtraOffsets(10,10,10,10);//设置偏移量，类似于内边距
         consumeChart.setDragEnabled(false);//是否可以拖拽
         consumeChart.setScaleEnabled(false);//是否可以放大
+        consumeChart.setTouchEnabled(true);
         setBAxis();//设置坐标轴
         setBData();//设置数据
     }
 
     private void setBData(){
         //C的数据
-        List<BarEntry> entryList1 = new ArrayList<>();
-        entryList1.add(new BarEntry(0,320f));
-        entryList1.add(new BarEntry(1,362f));
-        entryList1.add(new BarEntry(2,301f));
-        entryList1.add(new BarEntry(3,334f));
+//        entryList1.add(new BarEntry(0,320f));
+//        entryList1.add(new BarEntry(1,362f));
+//        entryList1.add(new BarEntry(2,301f));
+//        entryList1.add(new BarEntry(3,334f));
 
         BarDataSet barDataSet1 = new BarDataSet(entryList1,"");
         barDataSet1.setColor(Color.parseColor("#f8dca9"));
@@ -458,11 +578,11 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
         });
 
         //A的数据
-        List<BarEntry> entryList2 = new ArrayList<>();
-        entryList2.add(new BarEntry(0,120f));
-        entryList2.add(new BarEntry(1,132f));
-        entryList2.add(new BarEntry(2,101f));
-        entryList2.add(new BarEntry(3,134f));
+
+//        entryList2.add(new BarEntry(0,120f));
+//        entryList2.add(new BarEntry(1,132f));
+//        entryList2.add(new BarEntry(2,101f));
+//        entryList2.add(new BarEntry(3,134f));
 
         BarDataSet barDataSet2 = new BarDataSet(entryList2,"");
         barDataSet2.setColor(Color.parseColor("#ea9518"));
@@ -475,11 +595,11 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
         });
 
         //B的数据
-        List<BarEntry> entryList3 = new ArrayList<>();
-        entryList3.add(new BarEntry(0,220f));
-        entryList3.add(new BarEntry(1,232f));
-        entryList3.add(new BarEntry(2,201f));
-        entryList3.add(new BarEntry(3,234f));
+
+//        entryList3.add(new BarEntry(0,220f));
+//        entryList3.add(new BarEntry(1,232f));
+//        entryList3.add(new BarEntry(2,201f));
+//        entryList3.add(new BarEntry(3,234f));
 
         BarDataSet barDataSet3 = new BarDataSet(entryList3,"");
         barDataSet3.setColor(Color.parseColor("#efb336"));
@@ -498,7 +618,6 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
         BarData barData = new BarData(dataSets);
         barData.setBarWidth(0.6f);
         consumeChart.setData(barData);
-
     }
 
     private void setBAxis(){
@@ -507,12 +626,12 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
         xAxis.setDrawGridLines(false);
         xAxis.setTextSize(10f);
         xAxis.setLabelCount(4);
-        final String label[] = {"50以下","100-300","300-500","500以上"};
+        //final String label[] = {"50以下","100-300","300-500","500以上"};
         xAxis.setValueFormatter(new IAxisValueFormatter() {
             @Override
             public String getFormattedValue(float v, AxisBase axisBase) {
                 try {
-                    return label[(int) v];
+                    return barLabels[(int) v];
                 } catch (Exception e) {
                     return "";
                 }
@@ -532,7 +651,6 @@ public class DashboardFragment extends Fragment implements OnChartValueSelectedL
         yAxis_right.setAxisMinimum(0f);
         yAxis_right.setAxisMaximum(500f);
         yAxis_right.setTextSize(10f);
-
 
     }
 
