@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navigation_home"
+        android:icon="@drawable/live"
+        android:title="直播" />
+
+    <item
+        android:id="@+id/navigation_dashboard"
+        android:icon="@drawable/users"
+        android:title="用户" />
+
+    <item
+        android:id="@+id/navigation_notifications"
+        android:icon="@drawable/me"
+        android:title="我" />
+
+</menu>
